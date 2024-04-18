@@ -159,7 +159,8 @@ NMDA1 = NMDA*(perNMDA/100.)
 GABA1 = GABA*(perGABA/100.)
 GABAB = 0                        #No GABAB for now. Another time to yell at Brandon
 E = [AMPA1,NMDA1,GABA1,GABAB]
-Biascur = .091   #Generate Bias current, should set resting potential at -60mV
+#Biascur = .091   #Generate Bias current, should set resting potential at -60mV
+Biascur = 0.091
 # Set run params:
 PerTrialSpk = np.zeros([numtrials,len(sgi)])          #Spike storage
 onset = 200.           #Wait 200 ms before turning on stimulation
@@ -324,8 +325,9 @@ for i in range(len(sgi)):
 R_ind = (R > 13.8)
 vec_plot = VecStrength[R_ind]
 
-#ADD BACK
+#
 
+#Main Plot
 [meanvec,sdvec] = ICstats(spikevec,numtrials,sgi)
 sevec = sdvec/np.sqrt(numtrials)            #Set up standard error
 #Fitfun = fitfuncm(meanvec,sdvec,sgi,expdata["totmean"][0][1:9],expdatasd[1:9])
@@ -335,11 +337,13 @@ ax1 = fig.add_subplot(1, 1, 1)
 #ax1.set_xscale("log",'mask')
 ax1.set_xscale("log")
 ax1.errorbar(sgi,meanvec,yerr=sevec)
-plt.xlim([sgi[0], sgi[len(sgi)-1]])
+plt.xlim([sgi[0] - 1, sgi[len(sgi)-1] + 100])
+plt.xlabel("Modulation Frequency")
+plt.ylabel("Spike Rate (spike/s)")
 
 
-'''
-#With Vector Strength
+
+#With Vector Strength (at synchronization only)
 ax2 = ax1.twinx()
 ax2.plot(sgi[R_ind], vec_plot, 'ro')
 if (len(R_ind) > 1):
@@ -347,8 +351,16 @@ if (len(R_ind) > 1):
         if (R_ind[i] & R_ind[i+1]):
             ax2.plot([sgi[i], sgi[i+1]], [VecStrength[i], VecStrength[i+1]], "r-")
 ax2.set_ylim(0, 0.8)
+#ax2.ylabel("Vector Strength")
+ax2.set_ylabel("Vector Strength", rotation=-90, labelpad=20)
 print(R_ind)
-'''
+
+#With Vector Strength
+ax2 = ax1.twinx()
+ax2.plot(sgi, VecStrength, 'ro-')
+ax2.set_ylabel("Vector Strength", rotation=-90, labelpad=20)
+ax2.set_ylim(0, 0.8)
+
 
 '''
 #PSTH

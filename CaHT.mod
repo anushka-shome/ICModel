@@ -24,7 +24,7 @@ NEURON {
 :}
 
 PARAMETER {
-	pcal = 0.0001 (cm/s)
+	pcal = 0.00001 (cm/s)
 	eca = -70 (mV)
 	v (mV)
 	celsius = 22 (degC) :Fix
@@ -33,7 +33,7 @@ PARAMETER {
 	f = 96485 (C/mol)
 	r = 8.314 (J/mol*K)
 	cao = 2e-3 (M)
-    cai = 2e-4 (M)
+    cai = 5e-8 (M)
 	
 }
 
@@ -58,7 +58,7 @@ ASSIGNED {
 
 BREAKPOINT {
 	SOLVE states
-	g = (z^(2)*f^(2)*v/r*(celsius+273.15))*((cai-cao*exp(-z*f*v/r*(celsius+273.15)))/(1-exp(-z*f*v/r*(celsius+273.15))))
+	g = (z^(2)*f^(2)*v/r*(celsius+273.15))*((cai-cao*exp(-z*f*v/(r*(celsius+273.15))))/(1-exp(-z*f*v/(r*(celsius+273.15)))))
 	ica = pcal*m^(2)*g :and h if needed
 	
 }
@@ -80,7 +80,7 @@ INITIAL {
     m = m_inf
 }
 
-PROCEDURE evaluate_fct(v(mV)) { :FILL EQUATIONS
+PROCEDURE evaluate_fct(v(mV)) {
 	am = 1.6/(1+exp(-0.072(v-5.0)))
 	bm = 0.02(v-1.31)/(exp((v-1.31)/5.38)-1)
 	m_inf = am/(am+bm)

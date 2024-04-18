@@ -129,8 +129,9 @@ class IC_SustainedFiring(object):
         h.celsius = 34
         self.steps_per_ms = 1/self.Dt
         
-        '''
+        
         #Graphing iClamp
+        
         v = h.Vector().record(self.soma(0.5)._ref_v) #MP
         t = h.Vector().record(h._ref_t) #Time
         h.finitialize(-65*mV)
@@ -144,7 +145,8 @@ class IC_SustainedFiring(object):
         plt.xlabel("Time(ms)")
         plt.ylabel("Membrane Potential(mV)")
         plt.show()   
-        '''
+        
+        
 
     def loadInputs(self,drvinputsE,drvIinputs):
         """

@@ -8,23 +8,21 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
     SUFFIX HCN
-    USEION na READ ena WRITE ina
-    USEION k READ ek WRITE ik
-    RANGE gh
+    NONSPECIFIC_CURRENT i
+    RANGE gh, eh
     RANGE m_inf
     RANGE tau_m
     RANGE m_exp
 }
 
-:UNITS {
-	:(mA) = (milliamp)
-	:(mV) = (millivolt)
-:}
+UNITS {
+	(mA) = (milliamp)
+	(mV) = (millivolt)
+}
 
 PARAMETER {
 	gh = 0.000218 (S/cm2)
-	ena = -70 (mV)
-	ek = -90 (mV)
+	eh  = -40 (mV)
 	v (mV)
 	celsius = 22 (degC)
 }
@@ -35,8 +33,7 @@ STATE {
 }
 
 ASSIGNED {
-    ina (mA/cm2)
-    ik (mA/cm2)
+    i (mA/cm2)
     m_inf
     tau_m
     m_exp
@@ -46,8 +43,7 @@ ASSIGNED {
 
 BREAKPOINT {
 	SOLVE states
-	ina = gh * (v-ena)
-	ik = gh * (v-ek)
+	i = gh * m * (v-eh)
 	
 }
 

@@ -84,22 +84,28 @@ class IC_AdaptedFiring(object):
         #soma.ek_kdrtea=-90               #Changed in mod code
         '''
         
+        '''
         self.soma.insert('ik2')
         #soma.ek_ik2=-90                  #Changed in mod code
         self.soma.gbar_ik2 = 0
+        '''
         
+        '''
         self.soma.insert('hsus')
         self.soma.eh_hsus = -40
         self.soma.gh_hsus = 0
         self.soma.ek = -90
+        '''
         
-        self.soma.insert('CaLT')
         
-        self.soma.insert('CaHT')
         
-        self.soma.insert('HCN')
+        #self.soma.insert('CaLT')
         
-        self.soma.insert('KCa')
+        #self.soma.insert('CaHT')
+        
+        #self.soma.insert('HCN')
+        
+        #self.soma.insert('KCa')
         
         #Insert point process mechanisms
         #Set resting mem potential
@@ -112,7 +118,7 @@ class IC_AdaptedFiring(object):
         
         self.stim = h.IClamp(self.soma(0.5))           #This is here to test model
         self.stim.delay = 0
-        self.stim.amp = 0.5
+        self.stim.amp = 5
         self.stim.dur = 100
         
         #Insert OUNoise process
@@ -136,7 +142,7 @@ class IC_AdaptedFiring(object):
         h.celsius = 34
         self.steps_per_ms = 1/self.Dt
         
-        '''
+        
         #Graphing iClamp
         v = h.Vector().record(self.soma(0.5)._ref_v) #MP
         t = h.Vector().record(h._ref_t) #Time
@@ -151,7 +157,7 @@ class IC_AdaptedFiring(object):
         plt.xlabel("Time(ms)")
         plt.ylabel("Membrane Potential(mV)")
         plt.show()   
-        '''
+        
 
     def loadInputs(self,drvinputsE,drvIinputs):
         """

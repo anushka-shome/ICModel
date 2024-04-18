@@ -9,7 +9,7 @@ INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 NEURON {
     SUFFIX CaLT
     USEION ca READ eca WRITE ica
-    RANGE it, g
+    RANGE ica, g
     RANGE m_inf, h_inf
     RANGE tau_m, tau_h
     RANGE m_exp, h_exp
@@ -22,7 +22,7 @@ NEURON {
 :}
 
 PARAMETER {
-	pcat = 0.0002 (cm/s)
+	pcat = 0.00002 (cm/s)
 	eca = -70 (mV)
 	v (mV)
 	celsius = 22 (degC) :Fix

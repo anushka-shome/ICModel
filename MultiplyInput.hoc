@@ -1,0 +1,117 @@
+objref ni
+strdef file2
+ni = new File()
+file2 = "numinputsE.dat"
+ni.ropen(file2)
+numinputsE = ni.scanvar()
+ni.close()
+
+objref nii
+strdef file47
+nii = new File()
+file47 = "numinputsI.dat"
+nii.ropen(file47)
+numinputsI = nii.scanvar()
+nii.close()
+
+objref rf
+
+objref rsp[numinputsE]
+objref rspI[numinputsI]
+objref a[numinputsE]
+objref b[numinputsE]
+
+objref c[numinputsI]
+objref d[numinputsI]
+
+
+objref fih
+objref nil
+objref fihlist
+
+objref nclist1, nctemp1
+objref nclist2, nctemp2
+objref nclist3, nctemp3
+objref nclist4, nctemp4
+
+nclist1 = new List()
+nclist2 = new List()
+nclist3 = new List()
+nclist4 = new List()
+
+strdef filename
+strdef filename2
+strdef filenameI
+strdef dumbfile
+strdef dumbfileI
+
+
+
+rf = new File()
+
+for iii = 0,numinputsE-1 {
+	sprint(filename,"dumbfile%d.dat",iii+1)
+	dumbfile = filename
+	rf.ropen(dumbfile)
+
+	rsp[iii] = new Vector()
+	n = rsp[iii].scanf(rf)
+	numspiking = rsp[iii].size()
+	rf.close
+
+	a[iii] = new AMPA_LL_IC(0.5)
+	nctemp1 = new NetCon(nil,a[iii],0,1,(ampaconduct))
+	nclist1.append(nctemp1)
+
+	b[iii] = new NMDA_LL_IC(0.5)
+	nctemp2 = new NetCon(nil,b[iii],0,1,(nmdaconduct))
+	nclist2.append(nctemp2)
+
+
+}
+
+for iiii = 0,numinputsI-1 {
+	sprint(filenameI,"idumbfile%d.dat",iiii+1)
+	dumbfileI = filenameI
+	rf.ropen(dumbfileI)
+
+	rspI[iiii] = new Vector()
+	n = rspI[iiii].scanf(rf)
+	numspikingI = rspI[iiii].size()
+	rf.close
+
+	c[iiii] = new ICGABAa(0.5)
+	nctemp3 = new NetCon(nil,c[iiii],0,1,(gabaaconduct))
+	nclist3.append(nctemp3)
+	
+	d[iiii] = new ICGABAb3(0.5)
+	nctemp4 = new NetCon(nil,d[iiii],0,1,(gababconduct))
+	nclist4.append(nctemp4)
+
+}
+
+proc loadspikes() { local jj
+for jj=0,numinputsE-1 {
+	numss = rsp[jj].size()
+	for ii=0,numss-1 {
+		nclist1.o(jj).event((rsp[jj].x[ii] + delay))
+		nclist2.o(jj).event((rsp[jj].x[ii] + delay))
+		printf("its working cal\n")
+
+}}
+
+for jj=0,numinputsI-1 {
+	numsI = rspI[jj].size()
+	for ii=0,numsI-1 {
+		nclist3.o(jj).event((rspI[jj].x[ii] + delay))
+		nclist4.o(jj).event((rspI[jj].x[ii] + delay))
+		printf("dont worry\n")
+}}}
+
+fih = new FInitializeHandler("loadspikes()")
+
+
+
+
+
+

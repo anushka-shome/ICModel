@@ -1,0 +1,167 @@
+load_file("nrngui.hoc")
+
+objref fV
+objref gf1
+objref pf
+objref pfa
+
+strdef file1
+strdef trace
+strdef file8
+strdef file9
+strdef file10
+objref dv
+objectvar g[20]
+double amps[1]
+
+/* Load Procedures */
+
+
+
+proc InputSpikes(){
+xopen("LoadInputs.hoc")
+}
+
+proc tracesave2(){
+	fV = new File()
+	gf1 = new File()
+	file1 = "filesav.dat"
+	gf1.ropen(file1)
+	gf1.scanstr(trace)
+	gf1.close()
+	fV.wopen(trace)
+	dv.printf(fV)
+	fV.close()
+}
+
+proc ChangeMemPot() {
+pf = new File()
+file10 = "biascur.dat"
+pf.ropen(file10)
+}
+
+proc ChangeInit() {
+pfa = new File()
+file8 = "vinit.dat"
+pfa.ropen(file8)
+}
+
+/* TOPOLOGY */
+
+create soma
+access soma
+
+
+/* GEOMETRY & BIOPHYSICS*/
+
+soma {
+
+	nseg = 1
+	L = 32.65//74
+	diam = 32.65// 60
+	Ra = 150
+	cm = 1
+      
+	insert pas
+	g_pas = 2.8e-4
+	//14.9e-5 //1.78e-5
+	e_pas = -70
+
+	insert Isodium
+	ena = 50
+	vtraub_Isodium = -52
+	gnabar_Isodium = 0.1
+	//gnabar_Isodium = 0
+	
+	insert kLT_VCN2003
+	// originally 0
+	//gkbar_kLT_VCN2003 = 0.04
+	//gkbar_kLT_VCN2003 = 0.0002   
+    gkbar_kLT_VCN2003 = 0
+	ek_kLT_VCN2003=-90
+	
+	
+	insert kHT_VCN2003
+	//gkbar_kHT_VCN2003 = 0.03
+	gkbar_kHT_VCN2003 = 0.005
+	ek_kHT_VCN2003=-90
+
+
+	insert kdr
+	ek_kdr=-90
+	//ek_kdr=-80
+	//gbar_kdr = 0.086 - (.5*0.086)
+
+	insert kdrtea
+	ek_kdrtea = -90
+	//ek_kdrtea = -80
+	//gbartea_kdrtea = 0.014 - (.5*0.086)
+
+	insert ik2
+	ek_ik2=-90
+	//gbar_ik2 = 0.0008
+	gbar_ik2 = 0
+	
+
+	insert hsus
+	eh_hsus = -40 
+	gh_hsus=6.44e-5
+
+	ek = -90
+	//ek = -80
+      }
+
+
+
+objref hold
+hold = new IClamp(0.5)
+hold.del = 0
+hold.dur = 1000
+hold.amp = 0
+
+//objref stim
+//stim = new IClamp(0.5)
+//stim.del = 400
+//stim.dur = 200
+//stim.amp = -0.100
+
+ChangeMemPot()
+amps = pf.scanvar()
+pf.close()
+hold.amp = amps
+
+ChangeInit()
+vin = pfa.scanvar()
+pfa.close()      
+
+
+
+/* STIMULATION PARAMETERS */
+
+trans = 00
+Dt = 0.02
+npoints = 50000
+dt = 0.02
+tstart = trans
+tstop = trans + Dt*npoints
+v_init=vin
+celsius=34 
+steps_per_ms = 1/Dt
+      
+g[1] = new Graph()
+g[1].size(tstart,tstop,-120,40)
+g[1].addvar("soma.v(.5)",1,0)
+graphList[0].append(g[1])
+
+
+
+InputSpikes()  
+
+dv = new Vector()
+dv.record(&soma.v(.5)) 
+
+ 
+run()
+tracesave2() 
+      
+

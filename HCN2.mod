@@ -19,7 +19,7 @@ PARAMETER {
 
 
 NEURON {
-	SUFFIX hcn
+	SUFFIX hcn2
 	NONSPECIFIC_CURRENT i
         RANGE gh, eh
         GLOBAL hinf,tau

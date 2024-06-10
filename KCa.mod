@@ -1,94 +1,106 @@
-:Created on Thu Feb  1 23:42:09 2024
+: Ca-dependent K channels (BK and SK)
 
-:@author: anushkashome
-
-TITLE Calcium Dependent Potassium Channels
-
-INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)} 
 
 NEURON {
-    SUFFIX KCa
-    USEION ca READ eca WRITE ica
-    USEION k READ ek WRITE ik
-    RANGE ik, ica
-    RANGE gbk, gsk
-    RANGE aq, bq, br
-    RANGE q, r, s
-    
-
+	SUFFIX kca
+	USEION ca READ ica
+	USEION k READ ek WRITE ik
+	RANGE gbkbar, gskbar, gbar, i, ask, bsk, gsk, gbk, isk, ibk
+	GLOBAL ca0, tau, stau, taucadiv, tauskdiv, erevBK, erevSK
 }
 
-:UNITS {
-	:(mA) = (milliamp)
-	:(mV) = (millivolt)
-:}
+UNITS {
+	(molar) = (1/liter)
+	(mM) = (millimolar)
+	(mV) = (millivolt)
+	(mA) = (milliamp)
+	(S) = (siemens)
+	B = .26 (mM-cm2/mA-ms)
+}
 
 PARAMETER {
-	eca = -70 (mV)
-	ek = -90 (mV)
-	v (mV)
-	celsius = 22 (degC) :Fix
-	dt (m/s)
-    cai = 2e-4 (M)
-    gbkbar = 0.00226 (S/cm2)
-    gskbar = 0.03 (S/cm2)
-	
-}
-
-STATE {
-    q
-    r
-	s
+	gbkbar = .01	(S/cm2)	: maximum permeability
+	erevBK = -85
+	gskbar = .01	(S/cm2)	: maximum permeability
+	erevSK = -85
+	ca0 = .00007	(mM)
+	tau = 9		(ms)
+	taucadiv = 1
+	tauskdiv = 1
+	ask = 1
+	bsk = 1
+	alphar = 7.5	(/ms)
+	stau = 10		(ms)
 }
 
 ASSIGNED {
-    ica (mA/cm2)
-    ik (mA/cm2)
-    gbk (mho/cm2)
-    gsk (mho/cm2)
-    tadj
-    aq
-    bq
-    br
-   
-	
+	v			(mV)
+	ek		(mV)
+	ik		(mA/cm2)
+	isk		(mA/cm2)
+	ibk		(mA/cm2)
+	i 		(mA/cm2)
+	ica		(mA/cm2)
+	area	(microm2)
+  gbk		(S/cm2)
+  gsk		(S/cm2)
+  gbar  (S/cm2)
 }
 
+STATE { 
+	ca_i (mM)		<1e-5> 
+	q 
+	r 
+	s 
+}
 
 BREAKPOINT {
-	SOLVE states
-	ik = (gbk+gsk)*(v-ek)
-	gbk = gbkbar * r * s^(2)
-    gsk = gskbar * q^(2)
-	
+	SOLVE state METHOD cnexp
+	gbk = gbkbar*r*s*s
+	gsk = gskbar*q*q
+	isk = gsk*(v - erevSK)
+	ibk = gbk*(v - erevBK)
+	ik = isk + ibk
+	i = ik
 }
 
-
-
-PROCEDURE states() {	: this discretized form is more stable
-    evaluate_fct(v)
-    q = aq/(aq+bq)
-    r = 7.5/(7.5+br)
-    s = 1/(1+4/(1000*cai))
-	:VERBATIM
-	:return 0;
-	:ENDVERBATIM
+DERIVATIVE state {	: exact when v held constant; integrates over dt step
+	ca_i' = -B*ica - taucadiv*(ca_i-ca0)/tau
+	q' = tauskdiv*(ask*alphaq(ca_i)*(1-q)-bsk*betaq(ca_i)*q)
+	r' = alphar*(1-r)-betar(v)*r
+	s' = (sinf(ca_i)-s)/stau
 }
 
-UNITSOFF
 INITIAL {
-    tadj = 3.0 ^ ((celsius-22)/ 10 ) :Fix later
-    evaluate_fct(v)
-    q = aq/(aq+bq)
-    r = 7.5/(7.5+br)
-    s = 1/(1+4/(1000*cai))
+	ca_i = ca0
+	q = alphaq(ca_i)/(alphaq(ca_i)+betaq(ca_i))
+	r = alphar/(alphar+betar(v))
+  s = sinf(ca_i)
+  gbar = gbkbar + gskbar
 }
 
-PROCEDURE evaluate_fct(v(mV)) {
-	aq = 0.00246/(exp(12*log(10*cai)+28)/-4.5)
-	bq = 0.006/(exp(12*log(10*cai)+60.4)/35)
-	br = 0.11/exp((v-35)/14.9)
-	
+FUNCTION exp1(A (/ms), d, k, x (mM)) (/ms) {
+	UNITSOFF
+	exp1 = A/exp((12*log10(x)+d)/k)
+	UNITSON
 }
 
-UNITSON
+FUNCTION alphaq(x (mM)) (/ms) {
+	alphaq = exp1(0.00246,28.48,-4.5,x)	:28
+}
+
+FUNCTION betaq(x (mM)) (/ms) {
+	betaq = exp1(0.006,60.4,35,x)
+}
+
+FUNCTION betar(v (mV)) (/ms) {
+	UNITSOFF
+	betar = 0.11/exp((v-35)/14.9)
+	UNITSON
+}
+
+FUNCTION sinf(x (mM)) {
+	UNITSOFF
+	sinf = 1/(1+4/(1000*x))
+	UNITSON
+}

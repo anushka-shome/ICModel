@@ -1,92 +1,74 @@
-:Created on Mon Jan 22 20:41:38 2024
+TITLE high-threshold calcium (L-) current from hippocampal pyramidal cells
 
-:@author: anushkashome
+COMMENT Equations from
+   McCormick DA, Huguenard JR (1992) A model of the electrophysiological
+   properties of thalamocortical relay neurons. J Neurophys 68(4):
+   1384-1400.
+	See also
+   Kay AR, Wong RK (1987) Calcium current activation kinetics in isolated    
+   pyramidal neurones of the Ca1 region of the mature guinea-pig 
+   hippocampus. J Physiol 392: 603-616.
 
-
-TITLE High Threshold Calcium Channels
-
-INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)} 
+>< Temperature adjusts time constants measured at 23.5 degC.
+>< Written by Arthur Houweling for MyFirstNEURON.
+ENDCOMMENT
 
 NEURON {
-    SUFFIX CaHT
-    USEION ca READ eca WRITE ica
-    RANGE ica, g
-    RANGE m_inf
-    RANGE tau_m
-    RANGE m_exp
-    RANGE am, bm
-
+	SUFFIX iL
+	USEION ca READ cai,cao WRITE ica
+        RANGE pca, minf, mtau, ica
 }
 
-:UNITS {
-	:(mA) = (milliamp)
-	:(mV) = (millivolt)
-:}
+UNITS {
+	(mA) = (milliamp)
+	(mV) = (millivolt)
+	(mM) = (milli/liter)
+}
 
 PARAMETER {
-	pcal = 0.00001 (cm/s)
-	eca = -70 (mV)
-	v (mV)
-	celsius = 22 (degC) :Fix
-	dt (m/s)
-	z = 2
-	f = 96485 (C/mol)
-	r = 8.314 (J/mol*K)
-	cao = 2e-3 (M)
-    cai = 5e-8 (M)
-	
+	v		(mV)
+	celsius		(degC)
+	cai		(mM)
+	cao		(mM)
+	pca= 2.76e-4	(cm/s)		
 }
 
-STATE {
-    m
-	
-}
+STATE { m }
 
 ASSIGNED {
-    ica (mA/cm2)
-    g (mho/cm2)
-    m_inf
-    tau_m (ms)
-    m_exp
-    am
-    bm
-    tadj
-   
-	
+	ica	(mA/cm2)
+	mtau	(ms)
+	minf 
+	tadj
 }
 
-
-BREAKPOINT {
-	SOLVE states
-	g = (z^(2)*f^(2)*v/r*(celsius+273.15))*((cai-cao*exp(-z*f*v/(r*(celsius+273.15))))/(1-exp(-z*f*v/(r*(celsius+273.15)))))
-	ica = pcal*m^(2)*g :and h if needed
-	
+BREAKPOINT { 
+	SOLVE states METHOD cnexp
+	ica= pca* m^2* nrn_ghk( v, cai, cao, 2)
 }
 
+DERIVATIVE states {
+       rates()
 
-
-PROCEDURE states() {	: this discretized form is more stable
-    evaluate_fct(v)
-    m = m + m_exp * (m_inf - m)
-	:VERBATIM
-	:return 0;
-	:ENDVERBATIM
+       m'= (minf- m)/ mtau 
 }
-
-UNITSOFF
+  
 INITIAL {
-    tadj = 3.0 ^ ((celsius-22)/ 10 ) :Fix later
-    evaluate_fct(v)
-    m = m_inf
+	tadj= 3^ ((celsius- 23.5)/ 10)
+	rates()
+	m= minf
+} 
+
+PROCEDURE rates() { LOCAL a,b UNITSOFF
+	a= 1.6/ (1+ exp(-0.072* (v- 5)))
+	b= 0.02* vtrap(-(v- 1.31), 5.36)
+
+	mtau= 1/ (a+ b)/ tadj
+	minf= 1/ (1+ exp((v+ 10)/ -10))
 }
 
-PROCEDURE evaluate_fct(v(mV)) {
-	am = 1.6/(1+exp(-0.072(v-5.0)))
-	bm = 0.02(v-1.31)/(exp((v-1.31)/5.38)-1)
-	m_inf = am/(am+bm)
-	tau_m = (1/(am+bm))/tadj
-	
-	m_exp = 1-exp(-dt/tau_m)
+FUNCTION vtrap( x, c) { 
+	:check for zero in denominator of rate equations
+        if (fabs(x/ c)< 1e-6) { vtrap= c+ x/ 2 }
+        else { vtrap=  x/ (1- exp(-x/ c)) }
 }
-
-UNITSON

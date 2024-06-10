@@ -1,11 +1,23 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jan 20 16:26:44 2024
-
-@author: anushkashome
-"""
-
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Author: Brandon S Coventry               Purdue University CAP lab, Wisconsin Institute for Translational Neuroengineering
+# Date: 03/05/2022
+# Revision History: This is a port from function to class for network models. 
+# Purpose: This is the class that implements a sustained firing inferior colliculus model. 
+# Notes: Modified from Coventry et al J Comput Neuro 2017 and Rabang et al Front Neural Circuits 2012. See these papers for more details
+# I/O Variables:
+#       Inputs:numE, numI: Number of excitatory and inhibitory inputs respectively. 
+#              OUNoise: Implement Ornstein-Uhlenbeck noise process to model resting state noise and set spontaneous activity
+#              randseed: Allow to specify a random seed for complete reproducibility. Randomize for randomization
+#              drvinputsE,drvIinputs: Input spike times for excitatory and inhibitory inputs respectively.
+#              gscale: Conductance scaling parameter
+#              nmdavdep: Set voltage dependance on NMDA receptors
+#              biascur: Bias current for holding cell at a given resting potential. Nominally this should be set so membrane potential is -60 mV
+#              Neurotransvec: A 4 vector with conductance strengths of the form [AMPA Strength, NMDA Strength, GABA A Strength, GABA B Strength]
+#              ampatau1,ampatau2,nmdatau1,nmdatau2,gabatau1,gabatau2: Sets time constants for AMPA, NMDA, and GABA receptors
+#       Outputs: Times: Output IC spike times
+#                Voltages: Output voltage waveforms from IC Model 
+# Python Version notes: Runs on Python 3. Tested on 3.6.8, cannot guarentee performance on 3.8+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------
 from neuron import h
 import numpy as np
 from neuron.units import ms, mV
@@ -15,7 +27,7 @@ import pdb
 h.load_file("stdrun.hoc")
 import pandas as pd
 import matplotlib.pyplot as plt
-h.nrn_load_dll("/Users/anushkashome/Practice/arm64/special/Isodium.o")
+#h.nrn_load_dll("/Users/anushkashome/ICModel/arm64/special")
 class IC_AdaptedFiring(object):
     """
     Init class sets up the model and sets variables. Inputs are in description above. 
@@ -45,50 +57,50 @@ class IC_AdaptedFiring(object):
         self.soma = h.Section()
         self.soma.nseg = 1
         self.soma.Ra = 150
-        self.soma.L = 34.5 #or 10.9099
-        self.soma.diam = 34.5 
+        self.soma.L = 32.65
+        self.soma.diam = 32.65
         self.soma.cm = 1
-        
         #Passive flux channels
+        
         self.soma.insert('pas')
-        self.soma.g_pas = .0000149 #conductance
+        self.soma.g_pas = .00019
         self.soma.e_pas = -70
         
         #Na channel
         self.soma.insert('Isodium')
-        self.soma.ena = 50 # reversal potential
-        self.soma.vtraub_Isodium = -52 
-        self.soma.gnabar_Isodium = 0.2 # max. conductance
-        
-        '''
+        self.soma.ena = 50
+        self.soma.vtraub_Isodium = -52
+        self.soma.gnabar_Isodium = 0.1
         #Low threshold K channel
+        
         self.soma.insert('kLT_VCN2003')
-        self.soma.gkbar_kLT_VCN2003 = 0
+        self.soma.gkbar_kLT_VCN2003 = 0.0003
+        
+        
         #soma.ek_kLT_VCN2003 = -90        #Change in mod code
-        '''
-        '''
         #High threshold K channel
+        '''
         self.soma.insert('kHT_VCN2003')
-        self.soma.gkbar_kHT_VCN2003 = 0
-        #soma.ek_kHT_VCN2003 = -90        #Change in mod code
+        self.soma.gkbar_kHT_VCN2003 = 0.005
         '''
         
+        #soma.ek_kHT_VCN2003 = -90        #Change in mod code
         #Delayed-rectifier k channel
         self.soma.insert('kdr')
         self.soma.gbar_kdr = 0.1
         #soma.ek_kdr = -90                #Changed in mod code
-        
-        '''
         #TEA-sensitive K channel
+        '''
         self.soma.insert('kdrtea')
-        #soma.ek_kdrtea=-90               #Changed in mod code
         '''
         
+        #soma.ek_kdrtea=-90               #Changed in mod code
         '''
         self.soma.insert('ik2')
         #soma.ek_ik2=-90                  #Changed in mod code
         self.soma.gbar_ik2 = 0
         '''
+        
         
         '''
         self.soma.insert('hsus')
@@ -98,14 +110,31 @@ class IC_AdaptedFiring(object):
         '''
         
         
+    
+        '''
+        self.soma.insert('itGHK') #CaLT
+        self.soma.pcabar_itGHK = 0.00002
+        '''
+    
         
-        #self.soma.insert('CaLT')
+        self.soma.insert('iL') #CaHT
+        self.soma.pca_iL = 0.00001
         
-        #self.soma.insert('CaHT')
         
-        #self.soma.insert('HCN')
+        self.soma.insert('kca') #KCa
+        self.soma.gbkbar_kca = 0.01
+        self.soma.gskbar_kca = 0.2
         
-        #self.soma.insert('KCa')
+        
+        
+        self.soma.insert('hcn2') #HCN
+        self.soma.eh_hcn2 = -40
+        self.soma.gh_hcn2 = 0
+        self.soma.ek = -90
+        
+        
+        
+        
         
         #Insert point process mechanisms
         #Set resting mem potential
@@ -118,7 +147,7 @@ class IC_AdaptedFiring(object):
         
         self.stim = h.IClamp(self.soma(0.5))           #This is here to test model
         self.stim.delay = 0
-        self.stim.amp = 5
+        self.stim.amp = 0.5
         self.stim.dur = 100
         
         #Insert OUNoise process
@@ -144,6 +173,7 @@ class IC_AdaptedFiring(object):
         
         
         #Graphing iClamp
+        
         v = h.Vector().record(self.soma(0.5)._ref_v) #MP
         t = h.Vector().record(h._ref_t) #Time
         h.finitialize(-65*mV)
@@ -157,6 +187,8 @@ class IC_AdaptedFiring(object):
         plt.xlabel("Time(ms)")
         plt.ylabel("Membrane Potential(mV)")
         plt.show()   
+        
+        
         
 
     def loadInputs(self,drvinputsE,drvIinputs):
@@ -331,10 +363,11 @@ class IC_AdaptedFiring(object):
         rec_t.record(h._ref_t)
         rec_v = h.Vector()
         rec_v.record(self.soma(0.5)._ref_v)
-        h.finitialize(-65*mV)
+        h.finitialize(-70*mV)
         h.continuerun(self.tstop)
         times = [] # Use list to add another trace later.
         voltages = []
         times.append(list(rec_t)) # alternativ to `list(rec_t)`: `numpy.array(rec_t)`
         voltages.append(list(rec_v))
         return [times,voltages]
+

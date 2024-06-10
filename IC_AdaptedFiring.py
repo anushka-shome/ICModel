@@ -111,10 +111,10 @@ class IC_AdaptedFiring(object):
         
         
     
-        '''
+        
         self.soma.insert('itGHK') #CaLT
         self.soma.pcabar_itGHK = 0.00002
-        '''
+        
     
         
         self.soma.insert('iL') #CaHT

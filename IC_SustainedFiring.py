@@ -147,6 +147,7 @@ class IC_SustainedFiring(object):
         plt.show()   
         
         
+        
 
     def loadInputs(self,drvinputsE,drvIinputs):
         """
@@ -320,7 +321,7 @@ class IC_SustainedFiring(object):
         rec_t.record(h._ref_t)
         rec_v = h.Vector()
         rec_v.record(self.soma(0.5)._ref_v)
-        h.finitialize(-65*mV)
+        h.finitialize(-70*mV)
         h.continuerun(self.tstop)
         times = [] # Use list to add another trace later.
         voltages = []

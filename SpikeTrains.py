@@ -23,8 +23,10 @@ def spike_trains(dur, freq, num_spikes, jitter, xx):
     if jitter:
         for i in range(num_spikes):
             spike_times[i] += xx*np.random.randn()
-            
+            if spike_times[i] < 0:
+                spike_times[i] = 0
     #print (spike_times)
     list.sort(spike_times)
+    print(spike_times)
     return spike_times
         

@@ -35,7 +35,7 @@ from inputProb import inputProb
 from BETAchars import BETAchars
 from ICModelAnalysis import ICstats,fitfuncm
 from SpikeTrains import spike_trains
-
+import pandas as pd
 
 # Setup model input parameters
 networkcheck = 0              #For extension to networks eventually.
@@ -79,6 +79,11 @@ tprime = ((gTau*gTau1)/(gTau-gTau1))*np.log(gTau/gTau1) #np.log() is base e
 gscale = 1/(np.exp(-tprime/15.0) - np.exp(-tprime/3.0))
 GPPDTau = APPDTau * PPDRatio
 
+#GABAa = 0
+#AMPA 100, NMDA 100
+#Input Excitatory Freq 64, Input Inhibitory 64
+#Excitatory input VCN
+#Inhibitory does matter
 AMPAtau1 = .5464
 AMPAtau2 = 6
 NMDAtau1 = 32
@@ -207,22 +212,25 @@ for nn in range(len(sgi)):
             drvIinputs = psth_to_vsAV(sgi[nn],spcycleI,cyclesdI,gaussvsI,ratesI)
             
             #For spike trains:
-            #drvinputs = spike_trains(100, 10, len(drvinputs), False, 0)
-            #drvIinputs = np.zeros(len(drvIinputs))
+            drvinputs = spike_trains(100, 10, 8, False, 1)
+            drvIinputs = np.zeros(len(drvIinputs))
             
             #if sgi[nn] == 6498:
                 #pdb.set_trace()
                 
             #/*Remove for spike trains
+            '''
             jittershift = delays
             B = drvinputs + EXvariance*np.asarray(randn(1))[0][0]
             C = drvIinputs + jittershift + INvariance*np.asarray(randn(1))[0][0]
              #*/
+             '''
              
             randseed = rnd.uniform(0,1)
             randseed = round(randseed*100)
             
             #/*Remove for spike trains
+            '''
             if np.size(drvinputs)> 0:
                 drvinputs = np.concatenate(drvinputs)
             else:
@@ -233,6 +241,7 @@ for nn in range(len(sgi)):
                 drvIinputs = np.asarray(drvIinputs)
             #ICCell.loadInputs(drvinputsE,drvIinputs)
             #*/
+            '''
             
             ICCell.setRNDSeed(randseed)
             #[spikes, nums] = spike_trains(100, 10, False, 0)
@@ -241,6 +250,7 @@ for nn in range(len(sgi)):
             [spkts, voltages] = ICCell.loadSpikeTimes(drvinputs,drvIinputs)
             #[spkts, voltages] = SustainedFiring_PSO(numE,numI,OUnoise,networkcheck,randseed,drvinputs,drvIinputs,APPDTau,GPPDTau,gTau,gscale,vdepscale,agent[3,0],Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2)
             [spike_timesRAW, num_spikes] = SpDetect(voltages[0]) #Count and detect spikes
+            print(num_spikes)
             #print(spike_timesRAW)
             #[spike_timesRAW, num_spikes] = spike_trains(100, 10, True, 1)
             #spike_timesRAW = spike_trains(100, 10, num_spikes, False, 0)
@@ -267,6 +277,7 @@ for nn in range(len(sgi)):
             j = 0
             
             #/*Remove for spike trains
+            '''
             offset_index = 0
             if (len(offset) == 0):
                 offset_index = len(spike_timesRa) + 1 
@@ -274,21 +285,35 @@ for nn in range(len(sgi)):
                 offset_index = len(spike_timesRa) - len(offset)
             offset_ind = 0
             #*/
+            '''
             
             while(j < len(trialvec[mm])):
                 new_time = trialvec[mm][j]
                 
                 #/*Remove for spike trains
+                '''
                 if (j == offset_index):
                     #new_time -= offset[offset_ind]
                     offset_ind += 1 
                     offset_index += 1
                 #*/
-                
+                '''
+                #/*Add for spike trains
+                #while (new_time > 100): #replace 100 with interval duration
+                 #   new_time -= 100
+                    
+                tempphase.append((new_time % spcycle)/spcycle)
+                #tempphase.append(new_time/100)
+                #*/
+                #/*Remove for spike trains
+                '''
                 while (new_time > (spcycle)):
                     new_time -= spcycle
                 tempphase.append(new_time/spcycle)
+                '''
+                #*/
                 j += 1
+                
             #curr_len = len(spike_phases)
             for k in tempphase:
                 spike_phases.append(k)
@@ -307,6 +332,7 @@ for nn in range(len(sgi)):
     if (len(spike_phases) != 0):
         VecStrength[nn] /= (len(spike_phases))
     total_spikes[nn] = len(spike_phases)
+    print(spike_phases)
     
         #print(sgi[nn])
     #else:
@@ -342,7 +368,7 @@ plt.xlabel("Modulation Frequency")
 plt.ylabel("Spike Rate (spike/s)")
 
 
-
+'''
 #With Vector Strength (at synchronization only)
 ax2 = ax1.twinx()
 ax2.plot(sgi[R_ind], vec_plot, 'ro')
@@ -354,6 +380,7 @@ ax2.set_ylim(0, 0.8)
 #ax2.ylabel("Vector Strength")
 ax2.set_ylabel("Vector Strength", rotation=-90, labelpad=20)
 print(R_ind)
+'''
 
 #With Vector Strength
 ax2 = ax1.twinx()
@@ -400,6 +427,36 @@ plt.grid(True)
 #plt.plot(meanvec)
 #plt.set_xscale("log")
 '''
+
+# Printing Modulation Frequencies vs. Spike Times
+for i in range(len(sgi)):
+    print(sgi[i])
+    for j in range(len(spikevec[i])):
+        for k in range(len(spikevec[i][j])):
+            print(str(spikevec[i][j][k]) + ", ", end = "")
+        print()
+
+#Uploading to CSV
+#df = pd.DataFrame(columns=['Modulation Frequency', 'Trial Number', 'Spike Time'])
+freqs = []
+trials = []
+times = []
+
+for i in range(len(sgi)):
+    for j in range(len(spikevec[i])):
+        for k in range(len(spikevec[i][j])):
+            #rows.append({'Modulation Frequency': int(sgi[i]), 'Trial Number': int(j+1), 'Spike Time':float(spikevec[i][j][k])}, ignore_index = True)
+            freqs.append(sgi[i])
+            trials.append(j+1)
+            times.append(spikevec[i][j][k])
+
+df_dict = {"Modulation Frequency": freqs, "Trial Number":trials, "Spike Time": times}
+df = pd.DataFrame(df_dict)
+
+df.to_csv('spike_times.csv', index = False)
+#RUN AGAIN
+
+
 plt.show()
 
 

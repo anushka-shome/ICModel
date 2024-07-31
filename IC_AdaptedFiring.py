@@ -110,10 +110,11 @@ class IC_AdaptedFiring(object):
         '''
         
         
+        
     
         
         self.soma.insert('itGHK') #CaLT
-        self.soma.pcabar_itGHK = 0.00002
+        self.soma.pcabar_itGHK = 0.0000536
         
     
         
@@ -123,18 +124,41 @@ class IC_AdaptedFiring(object):
         
         self.soma.insert('kca') #KCa
         self.soma.gbkbar_kca = 0.01
-        self.soma.gskbar_kca = 0.2
+        self.soma.gskbar_kca = 0.25
         
         
         
-        self.soma.insert('hcn2') #HCN
-        self.soma.eh_hcn2 = -40
-        self.soma.gh_hcn2 = 0
-        self.soma.ek = -90
+        #self.soma.insert('hcn2') #HCN
+        #self.soma.eh_hcn2 = -20
+        #self.soma.gh_hcn2 = 0.0001
+        #self.soma.ek = -90
         
         
+        self.soma.insert('hcnb') #Barkai HCN X
+        self.soma.ghdbar_hcnb = 0.0001
+        #self.soma.ehd_hcnb = -20
         
+        #self.soma.insert('hcnz') #Zhou HCN
         
+        #self.soma.insert('hcnba') #Bahl HCN
+        
+        #self.soma.insert('hcnl') #Li HCN
+        
+        #self.soma.insert('hcns') #Saraga HCN
+        
+        #self.soma.insert('hcnsc') #Schmidt-Hieber HCN
+        
+        #self.soma.insert('hcnw') #Wang HCN
+        
+        #self.soma.insert('hcnf') #Forrest HCN
+        
+        #self.soma.insert('hcna') #Allen Institute HCN
+        
+        #self.soma.insert('hcnr') # Romani HCN
+        
+        #self.soma.insert('hcnm') # McCormick HCN
+        
+        #self.soma.insert('hcnn') #Neymotin HCN
         
         #Insert point process mechanisms
         #Set resting mem potential
@@ -147,7 +171,7 @@ class IC_AdaptedFiring(object):
         
         self.stim = h.IClamp(self.soma(0.5))           #This is here to test model
         self.stim.delay = 0
-        self.stim.amp = 0.5
+        self.stim.amp = -0.3
         self.stim.dur = 100
         
         #Insert OUNoise process

@@ -169,10 +169,12 @@ class IC_AdaptedFiring(object):
         #h.tstop = 2000
         #h.run()
         
+        '''
         self.stim = h.IClamp(self.soma(0.5))           #This is here to test model
         self.stim.delay = 0
         self.stim.amp = 0.5
         self.stim.dur = 100
+        '''
         
         #Insert OUNoise process
         self.f1 = h.Gfluct2(0.5)

@@ -16,7 +16,11 @@ def ICstats(spikevec,numtrials,sgi):
         curdat = spikevec[ii]
         spklen = np.zeros([numtrials])
         for jj in range(numtrials):
-            spklen[jj] = np.asarray(float(len(curdat[jj])))
+            print(type(curdat[jj]))
+            if type(curdat[jj]) is float:
+                spklen[jj] = np.asarray(float(0))
+            else:
+                spklen[jj] = np.asarray(float(len(curdat[jj])))
         meanvec[ii] = np.mean(spklen)
         sdvec[ii] = np.std(spklen)
     return [meanvec,sdvec]

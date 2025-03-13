@@ -36,6 +36,7 @@ from BETAchars import BETAchars
 from ICModelAnalysis import ICstats,fitfuncm
 from SpikeTrains import spike_trains
 from SpikeTrains import spike_trains_VS
+from SpikeTrains import spike_trains_VS_05
 import pandas as pd
 from scipy.signal import find_peaks
 
@@ -173,6 +174,7 @@ PerTrialSpk = np.zeros([numtrials,len(sgi)])          #Spike storage
 onset = 200.           #Wait 200 ms before turning on stimulation
 stimduration = 750.    #Stimulation time. Total run time set in NEURON is 1000 ms. Offset is then 50 ms
 spikevec = [0 for i in range(len(sgi))]
+inputvec = [0 for i in range(len(sgi))]
 delays = 0                                 #Add in extra delay on inputs if wanted.
 #EXgaussvs = np.array([1.1519, 1.1519, 1.1519, 1.1519, 1.1519, 0.3586, 0.1088, 0.0372])
 #INgaussvs = np.array([1.1519, 1.1519, 1.1519, 1.1519, 1.1519, 0.3586, 0.1088, 0.0372])
@@ -182,10 +184,11 @@ drvinputsE=[]
 drvIinputs=[]
 VecStrength = np.zeros(len(sgi), dtype=float)
 total_spikes = np.zeros(len(sgi))
+input_vs = []
 
 # Create a Model cell
-#ICCell = IC_AdaptedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
-ICCell = IC_SustainedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
+ICCell = IC_AdaptedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
+#ICCell = IC_SustainedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
 
 for nn in range(len(sgi)):
     spcycleE = EXspcycle[nn]
@@ -197,6 +200,7 @@ for nn in range(len(sgi)):
     gaussvsI = INgaussvs[nn]
     ratesI = INrates[nn]
     trialvec = [0 for j in range(numtrials)]
+    trialinputs = [0 for j in range(numtrials)]
     spike_phases = []
     #angfreq = 2*np.pi*sgi[nn]
     #total_spikes = 0;
@@ -213,13 +217,18 @@ for nn in range(len(sgi)):
             #print(drvinputs)
             #print(len(drvinputs))
             drvinputs = inputProb(drvinputs,EXprob)
-            drvIinputs = psth_to_vsAV(sgi[nn],spcycleI,cyclesdI,gaussvsI,ratesI)
+            drvIinputs = psth_to_vsAV(sgi[nn],spcycleI,cyclesdI,gaussvsI,ratesI) #Rewrite this 
             
             #For spike trains:
             #print(len(drvinputs))
             #drvinputs = spike_trains(100, 10, 8, False, 5) #before was taking the length drvinputs
-            drvinputs = spike_trains_VS(10, 100, 1, True, 0)
+            drvinputs, inp_vs = spike_trains_VS(sgi[nn], 80, 0.8, True, 0)
+            #input_vs.append(inp_vs)
+            #drvinputs, inp_vs = spike_trains_VS_05(sgi[nn], 80, 0.05, True, 0)
+            input_vs.append(inp_vs)
+            #drvinputs = [inp for inp in drvinputs if inp <= 750]
             print(drvinputs)
+            trialinputs[mm] = drvinputs
             #drvinputs = spike_trains(100, 10, 8, True, 5)
             print(sgi[nn])
             print(drvinputs)
@@ -268,10 +277,13 @@ for nn in range(len(sgi)):
             #[spike_timesRAW, num_spikes] = spike_trains(100, 10, True, 1)
             #spike_timesRAW = spike_trains(100, 10, num_spikes, False, 0)
             #total_spikes += num_spikes
-            #print(spike_timesRAW)
+            '''
+            print("----------")
+            print(list(spike_timesRAW))
+            print("----------")
             #print(spkts)
-            
-            
+            '''
+            '''
             #VOLTAGE PLOT
             new_spkts = [x for x in spkts[0] if x < 50]
             #new_spkts = spkts[0]
@@ -288,6 +300,7 @@ for nn in range(len(sgi)):
                 sp_vol.append(new_vol[st_i])
             plt.plot(st, sp_vol, marker='o', linestyle='')
             plt.show()
+            '''
             
             spike_timesRa = np.array([],dtype = 'float')
             offset = np.array([],dtype = 'float')
@@ -392,12 +405,14 @@ for nn in range(len(sgi)):
             times = spike_timesRAW
             i = 1j
             w = 2*np.pi/period
-            for time in times:
-                p_w += np.exp(i*w*time)
-            p_w = p_w/len(times)
+            if num_spikes > 0:
+                for time in times:
+                    p_w += np.exp(i*w*time)
+                p_w = p_w/len(times)
             vector.append(abs(p_w))
             
     spikevec[nn] = trialvec
+    inputvec[nn] = trialinputs
     #spike_phases = spike_phases*2*np.pi
     
     '''
@@ -509,18 +524,23 @@ plt.show()
 '''
 #Dot Raster Plot
 #Using mod. freq 8 only
-
+m = 5
+raster_inp = [inputvec[m][0], inputvec[m][1], inputvec[m][2], inputvec[m][3], inputvec[m][4], inputvec[m][5], inputvec[m][6], inputvec[m][7], inputvec[m][8], inputvec[m][9]]
+raster_out = [spikevec[m][0], spikevec[m][1], spikevec[m][2], spikevec[m][3], spikevec[m][4], spikevec[m][5], spikevec[m][6], spikevec[m][7], spikevec[m][8], spikevec[m][9]]
 plt.figure(figsize=(7, 15))
-plt.eventplot([spikevec[0][0], spikevec[0][1], spikevec[0][2], spikevec[0][3], spikevec[0][4], spikevec[0][5], spikevec[0][6], spikevec[0][7], spikevec[0][8], spikevec[0][9]], linelengths=0.5)
+plt.eventplot(raster_out, linelengths=0.5, color='blue', label="Output Spikes")
+plt.eventplot(raster_inp, linelengths=0.5, color = 'red',label="Input Spikes" )
 plt.xlabel('Time (s)')
 plt.ylabel('Trial')
 plt.title('Raster Plot of Spike Times')
+#plt.legend()
 plt.grid(True)
 #print(meanvec)
 #plt.plot(meanvec)
 #plt.set_xscale("log")
 '''
 
+'''
 # Printing Modulation Frequencies vs. Spike Times
 for i in range(len(sgi)):
     print(sgi[i])
@@ -530,31 +550,40 @@ for i in range(len(sgi)):
         print()
 
 print(spikevec)
+'''
 
 #Uploading to CSV
-#df = pd.DataFrame(columns=['Modulation Frequency', 'Trial Number', 'Spike Time'])
-'''
+
+df = pd.DataFrame(columns=['Modulation Frequency', 'Trial Number', 'Spike Time'])
+
 freqs = []
 trials = []
 times = []
 
 for i in range(len(sgi)):
     for j in range(len(spikevec[i])):
-        for k in range(len(spikevec[i][j])):
-            #rows.append({'Modulation Frequency': int(sgi[i]), 'Trial Number': int(j+1), 'Spike Time':float(spikevec[i][j][k])}, ignore_index = True)
-            freqs.append(sgi[i])
-            trials.append(j+1)
-            times.append(spikevec[i][j][k])
+        #rows.append({'Modulation Frequency': int(sgi[i]), 'Trial Number': int(j+1), 'Spike Time':float(spikevec[i][j][k])}, ignore_index = True)
+        if type(spikevec[i][j]) != float:
+            df_spikes = [str(spike) for spike in spikevec[i][j]]
+            spikes_str = ', '.join(df_spikes)
+            times.append(spikes_str)
+        else:
+            times.append("None")
+        freqs.append(sgi[i])
+        trials.append(j+1)
 
 df_dict = {"Modulation Frequency": freqs, "Trial Number":trials, "Spike Time": times}
 df = pd.DataFrame(df_dict)
 
-df.to_csv('spike_times.csv', index = False)
-'''
-#RUN AGAIN
+df.to_csv('adapt_spike_times_80_0N.csv', index = False)
+
+print("Input VS")
+print(input_vs)
 
 
 plt.show()
+
+
 
 
 

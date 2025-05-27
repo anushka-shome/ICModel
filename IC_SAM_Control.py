@@ -142,7 +142,7 @@ else:
 #Inhibitory characteristics
 if Itype == 1:
     [INvs, INrates, INspcycle, INgaussvs, INcyclesd] = DNLLchars(sgi,quota)
-    GABA = 3
+    GABA = 7 #3 proportion of GABA to AMPA in Rabang 2012
 elif Itype == 2:
     [INvs, INrates, INspcycle, INgaussvs, INcyclesd] = VNLLchars(sgi)
     GABA = 4
@@ -167,8 +167,8 @@ NMDA1 = NMDA*(perNMDA/100.)
 GABA1 = GABA*(perGABA/100.)
 GABAB = 0                        #No GABAB for now. Another time to yell at Brandon
 E = [AMPA1,NMDA1,GABA1,GABAB]
-#Biascur = .091   #Generate Bias current, should set resting potential at -60mV
-Biascur = 0.091
+Biascur = .091   #Generate Bias current, should set resting potential at -60mV
+#Biascur = 0.30
 # Set run params:
 PerTrialSpk = np.zeros([numtrials,len(sgi)])          #Spike storage
 onset = 200.           #Wait 200 ms before turning on stimulation
@@ -187,8 +187,8 @@ total_spikes = np.zeros(len(sgi))
 input_vs = []
 
 # Create a Model cell
-ICCell = IC_AdaptedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
-#ICCell = IC_SustainedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
+#ICCell = IC_AdaptedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
+ICCell = IC_SustainedFiring(numE,numI,OUnoise,drvinputsE,drvIinputs,gscale,vdepscale,Biascur,E,AMPAtau1,AMPAtau2,NMDAtau1,NMDAtau2,GABAtau1,GABAtau2,rndseed)
 
 for nn in range(len(sgi)):
     spcycleE = EXspcycle[nn]
@@ -216,15 +216,17 @@ for nn in range(len(sgi)):
             #print(drvinputs)
             #print(drvinputs)
             #print(len(drvinputs))
+            junk = 0
             drvinputs = inputProb(drvinputs,EXprob)
-            drvIinputs = psth_to_vsAV(sgi[nn],spcycleI,cyclesdI,gaussvsI,ratesI) #Rewrite this 
-            
+            drvIinputs = psth_to_vsAV(sgi[nn],spcycleI,cyclesdI,gaussvsI,ratesI) #Rewrite this             
             #For spike trains:
             #print(len(drvinputs))
             #drvinputs = spike_trains(100, 10, 8, False, 5) #before was taking the length drvinputs
-            drvinputs, inp_vs = spike_trains_VS(sgi[nn], 80, 0.8, True, 0)
+            drvinputs, inp_vs = spike_trains_VS(sgi[nn], 200, 0.2, True, 0)
+            #drvIinputs, junk = spike_trains_VS(sgi[nn], 80, 0.2, True, 0)
             #input_vs.append(inp_vs)
-            #drvinputs, inp_vs = spike_trains_VS_05(sgi[nn], 80, 0.05, True, 0)
+            #drvinputs, inp_vs = spike_trains_VS_05(sgi[nn], 200, 0.05, True, 0)
+            drvIinputs, junk = spike_trains_VS_05(sgi[nn], 80, 0.05, True, 0)
             input_vs.append(inp_vs)
             #drvinputs = [inp for inp in drvinputs if inp <= 750]
             print(drvinputs)
@@ -471,6 +473,8 @@ ax1 = fig.add_subplot(1, 1, 1)
 #ax1.set_xscale("log",'mask')
 ax1.set_xscale("log")
 ax1.errorbar(sgi,meanvec,yerr=sevec)
+spike_line = ax1.errorbar(sgi, meanvec, yerr=sevec, color='tab:blue', label="Spike Rate")[0]  
+ax1.yaxis.label.set_color(spike_line.get_color())
 plt.xlim([sgi[0] - 1, sgi[len(sgi)-1] + 100])
 plt.xlabel("Modulation Frequency")
 plt.ylabel("Spike Rate (spike/s)")
@@ -494,6 +498,7 @@ print(R_ind)
 ax2 = ax1.twinx()
 ax2.plot(sgi, VecStrength, 'ro-')
 ax2.set_ylabel("Vector Strength", rotation=-90, labelpad=20)
+ax2.yaxis.label.set_color("red")
 ax2.set_ylim(0, 1)
 
 
@@ -575,7 +580,7 @@ for i in range(len(sgi)):
 df_dict = {"Modulation Frequency": freqs, "Trial Number":trials, "Spike Time": times}
 df = pd.DataFrame(df_dict)
 
-df.to_csv('adapt_spike_times_80_0N.csv', index = False)
+df.to_csv('s_200Ex_80In_02Ex_005In_50G.csv', index = False)
 
 print("Input VS")
 print(input_vs)

@@ -8,6 +8,8 @@ Created on Tue Jan 30 16:24:29 2024
 
 import numpy as np
 import random as rnd
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 def spike_trains(dur, freq, num_spikes, jitter, xx):
     time_int = 1000/freq
@@ -58,7 +60,7 @@ def spike_trains_VS(freq, rate, vs, synch, depth):
         while num_attempts < max_attempts:
             temp_times = spike_times + [t]
             curr_vs = vector_strength(temp_times, w)
-            print(curr_vs)
+            #print(curr_vs)
             if abs(curr_vs - vs) <= tolerance:
                 spike_times.append(abs(t))
                 num_attempts = 0
@@ -214,10 +216,30 @@ def spike_time_gap(spike_times):
 
 def main():
     #spike_trains_VS(32, 100, 1, True, 0)
-    spikes = [2.44, 6.54, 11.14, 15.88, 19.92, 24.14, 28.62, 32.74, 36.72, 40.68, 44.94, 48.88, 53.1, 57.28, 61.34, 65.64, 70.06, 74.52, 79.02, 83.54, 87.58, 91.86, 96.28, 110.4, 126.48, 141.1, 152.74, 165.18, 174.72, 194.68, 213.08, 225.4, 234.74, 246.22, 263.18, 274.58, 282.6, 290.72, 299.92, 311.78, 322.52, 337.02, 351.8, 367.26, 383.98, 397.14, 411.96, 422.26, 439.48, 465.04, 483.36, 496.84, 531.74, 542.94, 553.46, 580.14, 596.82, 612.58, 632.36, 658.84, 677.94, 690.94, 711.72, 723.36, 736.2, 749.04, 772.96]
-    per = 1000/8
-    w = 2 * np.pi/per
-    print(vector_strength(spikes, w))
+    vs = [0.05, 0.2, 0.4, 0.6, 0.8]
+    all_spikes = []
+    for v in vs:
+        if v == 0.05:
+            spikes,_ = spike_trains_VS_05(8, 100, 0.05, True, 0)
+        else:
+            spikes,_ = spike_trains_VS(8, 100, v, True, 0)
+        all_spikes.append(spikes)
+    # Create the raster plot
+    plt.figure(figsize=(8, 6))
+    # Create a custom colormap by removing the middle white region
+    colors_list = ["#8B0000", "#00008B"]  # Dark red → Dark blue (Hex codes)
+    custom_cmap = LinearSegmentedColormap.from_list("dark_red_blue", colors_list, N=256)
+    colors = custom_cmap(np.linspace(0, 1, len(vs))) 
+    plt.eventplot(all_spikes, orientation='horizontal', lineoffsets=range(len(vs)), linelengths=0.8, colors=colors)
+
+    # Adjust y-axis to show frequencies as categorical labels
+    plt.yticks(range(len(vs)), [str(v) for v in vs])  # Treat frequencies as categories
+    plt.xlabel("Time (s)")
+    plt.ylabel("Vector Strength")
+    plt.title("Spike Train Raster Plot")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.show()
+
     
 
 if __name__ == "__main__":

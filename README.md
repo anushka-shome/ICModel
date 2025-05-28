@@ -11,6 +11,10 @@ Using either your computer's terminal or your IDE's terminal, navigate to the fo
 ```
 nrnivmodl
 ```
+This should create a folder named after your computer architecture (like arm64 for mac) within your repository containing the compiled .c and .o files for each .mod file. For more help with this, look at the NEURON forum online
+
+## Running the code
+To run the model, you have to run the IC SAM Control file.  
 
 
 
